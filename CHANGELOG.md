@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.10.3] - 2026-03-12
 
 ### Added
 - `/google-account` command to report the active Google account currently authenticated for Gemini Web.
