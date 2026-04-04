@@ -180,7 +180,7 @@ export function buildDeterministicSummary(results: QueryResultData[]): { summary
 async function resolveSummaryModel(
 	ctx: SummaryGenerationContext,
 	modelOverride?: string,
-): Promise<{ model: Model; apiKey: string }> {
+): Promise<{ model: Model; apiKey: string; headers?: Record<string, string> }> {
 	const normalizedOverride = typeof modelOverride === "string" ? modelOverride.trim() : "";
 	if (normalizedOverride.length > 0) {
 		const slashIndex = normalizedOverride.indexOf("/");
@@ -197,14 +197,14 @@ async function resolveSummaryModel(
 		if (!selectedAuth.ok || !selectedAuth.apiKey) {
 			throw new Error(`No API key available for summary model ${normalizedOverride}`);
 		}
-		return { model: selectedModel, apiKey: selectedAuth.apiKey };
+		return { model: selectedModel, apiKey: selectedAuth.apiKey, headers: selectedAuth.headers };
 	}
 
 	for (const { provider, id } of PREFERRED_SUMMARY_MODELS) {
 		const model = getModel(provider, id);
 		if (!model) continue;
 		const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
-		if (auth.ok && auth.apiKey) return { model, apiKey: auth.apiKey };
+		if (auth.ok && auth.apiKey) return { model, apiKey: auth.apiKey, headers: auth.headers };
 	}
 
 	throw new Error(`No API key available for summary models: ${PREFERRED_SUMMARY_MODELS.map(c => `${c.provider}/${c.id}`).join(", ")}`);
@@ -236,7 +236,7 @@ export async function generateSummaryDraft(
 	}
 
 	const startedAt = Date.now();
-	const { model, apiKey } = await resolveSummaryModel(ctx, modelOverride);
+	const { model, apiKey, headers } = await resolveSummaryModel(ctx, modelOverride);
 	const prompt = buildSummaryPrompt(results, feedback);
 
 	const userMessage: Message = {
@@ -245,7 +245,7 @@ export async function generateSummaryDraft(
 		timestamp: Date.now(),
 	};
 
-	const response = await complete(model, { messages: [userMessage] }, { apiKey, signal });
+	const response = await complete(model, { messages: [userMessage] }, { apiKey, headers, signal });
 	if (response.stopReason === "aborted") {
 		throw new Error("Aborted");
 	}

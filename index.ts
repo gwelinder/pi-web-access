@@ -575,18 +575,18 @@ export default function (pi: ExtensionAPI) {
 	async function resolveFirstAvailableModel(
 		ctx: SummaryGenerationContext,
 		candidates: Array<{ provider: string; id: string }>,
-	): Promise<{ model: Model; apiKey: string }> {
+	): Promise<{ model: Model; apiKey: string; headers?: Record<string, string> }> {
 		for (const { provider, id } of candidates) {
 			const model = getModel(provider, id);
 			if (!model) continue;
 			const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
-			if (auth.ok && auth.apiKey) return { model, apiKey: auth.apiKey };
+			if (auth.ok && auth.apiKey) return { model, apiKey: auth.apiKey, headers: auth.headers };
 		}
 		throw new Error(`No model available: ${candidates.map(c => `${c.provider}/${c.id}`).join(", ")}`);
 	}
 
 	async function rewriteSearchQuery(query: string, ctx: SummaryGenerationContext, signal: AbortSignal): Promise<string> {
-		const { model, apiKey } = await resolveFirstAvailableModel(ctx, [
+		const { model, apiKey, headers } = await resolveFirstAvailableModel(ctx, [
 			{ provider: "anthropic", id: "claude-haiku-4-5" },
 			{ provider: "google", id: "gemini-2.5-flash" },
 			{ provider: "openai", id: "gpt-4.1-mini" },
@@ -600,7 +600,7 @@ export default function (pi: ExtensionAPI) {
 					timestamp: Date.now(),
 				}],
 			},
-			{ apiKey, signal },
+			{ apiKey, headers, signal },
 		);
 		if (response.stopReason === "aborted") throw new Error("Aborted");
 		const contentParts = Array.isArray(response.content) ? response.content : [];
@@ -1060,8 +1060,6 @@ export default function (pi: ExtensionAPI) {
 	});
 
 	pi.on("session_start", async (_event, ctx) => handleSessionChange(ctx));
-	pi.on("session_switch", async (_event, ctx) => handleSessionChange(ctx));
-	pi.on("session_fork", async (_event, ctx) => handleSessionChange(ctx));
 	pi.on("session_tree", async (_event, ctx) => handleSessionChange(ctx));
 
 	pi.on("session_shutdown", () => {

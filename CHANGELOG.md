@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.10.5] - 2026-04-03
+
+### Fixed
+- Forward dynamic request `headers` from `ctx.modelRegistry.getApiKeyAndHeaders()` into `complete()` for query rewriting and summary generation, finishing the pi 0.63+ auth migration for providers that require per-request headers.
+- Removed legacy `session_switch`/`session_fork` lifecycle listeners and rely on immutable-session `session_start` reinitialization.
+
 ## [0.10.4] - 2026-03-27
 
 ### Added
@@ -37,6 +43,7 @@ All notable changes to this project will be documented in this file.
 - Exa search now always requests text content from both direct API and MCP paths (3000 chars default, 50000 with `includeContent`) instead of requesting highlights only. Ensures consistent answer quality regardless of whether Exa returns highlight snippets.
 - Adapted model registry calls to pi SDK changes: `getApiKey()` → `getApiKeyAndHeaders()` in `index.ts` and `summary-review.ts`, and `getAvailable()` from async to sync.
 - Hoisted dynamic `await import()` calls to static top-level imports in `gemini-web.ts`, `video-extract.ts`, and `youtube-extract.ts`.
+- Removed legacy `session_switch`/`session_fork` lifecycle listeners and rely on immutable-session `session_start` reinitialization.
 
 ### Removed
 - **`result-review` workflow.** Hard cutover — only `"none"` and `"summary-review"` remain. Removed from `WebSearchWorkflow` type, `resolveWorkflow()`, tool schema, `/websearch` command, and `/curator` command.
