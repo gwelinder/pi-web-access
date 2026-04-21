@@ -1525,7 +1525,11 @@ export default function (pi: ExtensionAPI) {
 		promptSnippet:
 			"Use for programming/API/library questions to retrieve concrete examples and docs before implementing or debugging code.",
 		parameters: Type.Object({
-			query: Type.String({ description: "Programming question, API, library, or debugging topic to search for" }),
+			query: Type.String({
+				minLength: 1,
+				pattern: "\\S",
+				description: "Programming question, API, library, or debugging topic to search for. Must contain at least one non-whitespace character.",
+			}),
 			maxTokens: Type.Optional(Type.Integer({
 				minimum: 1000,
 				maximum: 50000,

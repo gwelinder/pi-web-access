@@ -62,8 +62,12 @@ export async function executeCodeSearch(
 	const query = params.query.trim();
 	if (!query) {
 		return {
-			content: [{ type: "text", text: "Error: No query provided." }],
-			details: { query: "", maxTokens: params.maxTokens ?? 5000, error: "No query provided" },
+			content: [{ type: "text", text: "Error: Query must contain at least one non-whitespace character." }],
+			details: {
+				query: "",
+				maxTokens: params.maxTokens ?? 5000,
+				error: "Query must contain at least one non-whitespace character",
+			},
 		};
 	}
 

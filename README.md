@@ -109,7 +109,7 @@ code_search({ query: "Cloudflare workers bindings examples", includeDomains: ["g
 
 | Parameter | Description |
 |-----------|-------------|
-| `query` | Programming question, API, library, or debugging topic |
+| `query` | Programming question, API, library, or debugging topic. Must contain at least one non-whitespace character. |
 | `maxTokens` | Maximum tokens of context to return (default: 5000, max: 50000) |
 | `includeDomains` | Restrict to specific sources such as `github.com` or official docs |
 | `excludeDomains` | Exclude specific sources/domains |
