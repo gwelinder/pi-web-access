@@ -99,17 +99,22 @@ web_search({ queries: ["query 1", "query 2"], workflow: "summary-review" })
 
 ### code_search
 
-Search for code examples, documentation, and API references via Exa MCP. No API key required.
+Search for code examples, documentation, and API references via Exa's Search API with `type: "fast"` and highlighted code/context extraction. Requires `EXA_API_KEY` or `exaApiKey` in `~/.pi/web-search.json`.
 
 ```typescript
 code_search({ query: "React useEffect cleanup pattern" })
 code_search({ query: "Express middleware error handling", maxTokens: 10000 })
+code_search({ query: "Cloudflare workers bindings examples", includeDomains: ["github.com", "developers.cloudflare.com"] })
 ```
 
 | Parameter | Description |
 |-----------|-------------|
 | `query` | Programming question, API, library, or debugging topic |
 | `maxTokens` | Maximum tokens of context to return (default: 5000, max: 50000) |
+| `includeDomains` | Restrict to specific sources such as `github.com` or official docs |
+| `excludeDomains` | Exclude specific sources/domains |
+| `startPublishedDate` | ISO 8601 lower bound for result publication date |
+| `endPublishedDate` | ISO 8601 upper bound for result publication date |
 
 ### fetch_content
 
@@ -327,7 +332,7 @@ Rate limits: Perplexity is capped at 10 requests/minute (client-side). Content f
 | `curator-server.ts` | Ephemeral HTTP server with SSE streaming and state machine |
 | `summary-review.ts` | Summary prompt construction, model-based draft generation, and deterministic fallback summary |
 | `exa.ts` | Exa.ai search provider — direct API and MCP proxy, budget tracking |
-| `code-search.ts` | Code/docs search via Exa MCP |
+| `code-search.ts` | Code/docs search via Exa Search API (`type: "fast"`) |
 | `extract.ts` | URL/file path routing, HTTP extraction, fallback orchestration |
 | `gemini-search.ts` | Search routing across Exa, Perplexity, Gemini API, Gemini Web |
 | `gemini-url-context.ts` | Gemini URL Context + Web extraction fallbacks |

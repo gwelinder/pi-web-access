@@ -57,6 +57,26 @@ export interface ExaSearchOptions extends SearchOptions {
 	includeContent?: boolean;
 }
 
+export interface ExaCodeSearchOptions {
+	query: string;
+	numResults?: number;
+	includeDomains?: string[];
+	excludeDomains?: string[];
+	startPublishedDate?: string;
+	endPublishedDate?: string;
+	highlightMaxCharacters?: number;
+	signal?: AbortSignal;
+}
+
+export interface ExaCodeSearchResult {
+	title: string;
+	url: string;
+	publishedDate?: string;
+	author?: string;
+	highlights: string[];
+	text?: string;
+}
+
 type McpParsedResult = { title: string; url: string; content: string };
 
 let cachedConfig: WebSearchConfig | null = null;
@@ -172,6 +192,73 @@ function mapDomainFilter(domainFilter: string[] | undefined): { includeDomains?:
 function normalizeHighlights(value: unknown): string[] {
 	if (!Array.isArray(value)) return [];
 	return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+}
+
+function normalizeDomainList(domains: string[] | undefined): string[] | undefined {
+	if (!domains?.length) return undefined;
+	const normalized = domains
+		.map(domain => domain.trim())
+		.filter((domain): domain is string => domain.length > 0);
+	return normalized.length > 0 ? normalized : undefined;
+}
+
+export async function searchCodeWithExa(options: ExaCodeSearchOptions): Promise<ExaCodeSearchResult[]> {
+	const apiKey = getApiKey();
+	if (!apiKey) {
+		throw new Error(
+			"Exa code search requires EXA_API_KEY or ~/.pi/web-search.json exaApiKey. Exa MCP no longer exposes a dedicated code search tool.",
+		);
+	}
+
+	const budget = reserveRequestBudget();
+	if (budget) {
+		throw new Error("Exa monthly request limit reached for this API key.");
+	}
+
+	const numResults = Math.min(100, Math.max(1, Math.floor(options.numResults ?? 5)));
+	const highlightMaxCharacters = Math.min(20000, Math.max(200, Math.floor(options.highlightMaxCharacters ?? 4000)));
+	const includeDomains = normalizeDomainList(options.includeDomains);
+	const excludeDomains = normalizeDomainList(options.excludeDomains);
+
+	const response = await fetch(EXA_SEARCH_URL, {
+		method: "POST",
+		headers: {
+			"x-api-key": apiKey,
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			query: options.query,
+			type: "fast",
+			numResults,
+			...(includeDomains ? { includeDomains } : {}),
+			...(excludeDomains ? { excludeDomains } : {}),
+			...(options.startPublishedDate ? { startPublishedDate: options.startPublishedDate } : {}),
+			...(options.endPublishedDate ? { endPublishedDate: options.endPublishedDate } : {}),
+			contents: {
+				highlights: {
+					maxCharacters: highlightMaxCharacters,
+				},
+			},
+		}),
+		signal: requestSignal(options.signal),
+	});
+
+	if (!response.ok) {
+		const errorText = await response.text();
+		throw new Error(`Exa API error ${response.status}: ${errorText.slice(0, 300)}`);
+	}
+
+	const data = await response.json() as ExaSearchResponse;
+	return (data.results ?? [])
+		.filter((item): item is NonNullable<ExaSearchResponse["results"]>[number] & { url: string } => !!item?.url)
+		.map((item, index) => ({
+			title: item.title || `Source ${index + 1}`,
+			url: item.url,
+			publishedDate: item.publishedDate,
+			author: item.author,
+			highlights: normalizeHighlights(item.highlights),
+			text: typeof item.text === "string" && item.text.trim().length > 0 ? item.text : undefined,
+		}));
 }
 
 function buildAnswerFromSearchResults(results: ExaSearchResponse["results"]): string {

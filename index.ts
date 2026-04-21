@@ -1531,6 +1531,18 @@ export default function (pi: ExtensionAPI) {
 				maximum: 50000,
 				description: "Maximum tokens of code/documentation context to return (default: 5000)",
 			})),
+			includeDomains: Type.Optional(Type.Array(Type.String(), {
+				description: "Restrict to specific sources such as github.com, stackoverflow.com, or docs domains",
+			})),
+			excludeDomains: Type.Optional(Type.Array(Type.String(), {
+				description: "Exclude specific sources/domains from code search results",
+			})),
+			startPublishedDate: Type.Optional(Type.String({
+				description: "ISO 8601 lower bound for result publication date",
+			})),
+			endPublishedDate: Type.Optional(Type.String({
+				description: "ISO 8601 upper bound for result publication date",
+			})),
 		}),
 
 		async execute(toolCallId, params, signal) {
